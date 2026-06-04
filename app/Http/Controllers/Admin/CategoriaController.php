@@ -21,6 +21,7 @@ class CategoriaController extends Controller
      */
     public function create()
     {
+        
         return view('admin.categorias.create');
         
     }
@@ -32,10 +33,16 @@ class CategoriaController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
-        \App\Models\Categoria::create($request->only('nombre'));
+         $data = ($request->only('nombre'));
 
+        if ($request->hasFile('imagen')) {
+            $data['imagen'] = $request->file('imagen')->store('categorias', 'public');
+        }
+            
+        \App\Models\Categoria::create($data);
         return redirect()->route('admin.categorias.index')->with('success', 'Categoría creada exitosamente.');
     }
 
@@ -53,6 +60,7 @@ class CategoriaController extends Controller
     public function edit(string $id)
     {
         $categoria = \App\Models\Categoria::findOrFail($id);
+
         return view('admin.categorias.edit', compact('categoria'));
     }
 
@@ -63,10 +71,15 @@ class CategoriaController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
         $categoria = \App\Models\Categoria::findOrFail($id);
         $categoria->update($request->only('nombre'));
+
+        if ($request->hasFile('imagen')) {
+            $categoria->update(['imagen' => $request->file('imagen')->store('categorias', 'public')]);
+        }
 
         return redirect()->route('admin.categorias.index')->with('success', 'Categoría actualizada exitosamente.');
     }

@@ -1,47 +1,69 @@
-<x-guest-layout>
-    <!-- Session Status -->
-    <x-auth-session-status class="mb-4" :status="session('status')" />
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiValis — Iniciar sesión</title>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+</head>
+<body style="margin:0; padding:0; background:#f0efed; font-family:'Figtree', sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center;">
 
-    <form method="POST" action="{{ route('login') }}">
-        @csrf
+    <div style="width:100%; max-width:400px; padding:24px;">
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        {{-- LOGO --}}
+        <div style="text-align:center; margin-bottom:32px;">
+            <a href="{{ route('inicio') }}">
+                <img src="/img/Logo.jpg" style="height:60px;">
+            </a>
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
+        <h1 style="font-size:16px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; color:#111; text-align:center; margin-bottom:24px;">
+            INICIAR SESIÓN
+        </h1>
 
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
+        {{-- ERRORES --}}
+        @if($errors->any())
+            <div style="background:#fee2e2; color:#dc2626; padding:12px; font-size:12px; margin-bottom:16px; border-radius:4px;">
+                {{ $errors->first() }}
+            </div>
+        @endif
 
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+        <form method="POST" action="{{ route('login') }}">
+            @csrf
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
+            <div style="margin-bottom:16px;">
+                <label style="display:block; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#666; margin-bottom:6px;">
+                    Correo electrónico
+                </label>
+                <input type="email" name="email" value="{{ old('email') }}" required autofocus
+                       style="width:100%; padding:12px; border:1px solid #e5e5e5; background:#fff; color:#111; font-size:14px; box-sizing:border-box;">
+            </div>
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+            <div style="margin-bottom:24px;">
+                <label style="display:block; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#666; margin-bottom:6px;">
+                    Contraseña
+                </label>
+                <input type="password" name="password" required
+                       style="width:100%; padding:12px; border:1px solid #e5e5e5; background:#fff; color:#111; font-size:14px; box-sizing:border-box;">
+            </div>
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+            <button type="submit" style="width:100%; background:#111; color:#fff; padding:14px; border:none; cursor:pointer; font-size:12px; letter-spacing:0.1em; text-transform:uppercase;">
+                ENTRAR
+            </button>
+        </form>
+
+        <p style="text-align:center; margin-top:16px; font-size:12px; color:#666;">
+            ¿No tienes cuenta?
+            <a href="{{ route('register') }}" style="color:#111; font-weight:500;">Regístrate</a>
+        </p>
+
+        <p style="text-align:center; margin-top:8px; font-size:12px;">
+            <a href="{{ route('inicio') }}" style="color:#666;">← Volver a la tienda</a>
+        </p>
+
+    </div>
+
+</body>
+</html>

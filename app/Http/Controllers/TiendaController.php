@@ -14,16 +14,22 @@ class TiendaController extends Controller
     return view('tienda.index', compact('categorias', 'productos'));
 }
 
-public function catalogo()
+public function catalogo(request $request)
 {
     $categorias = \App\Models\Categoria::all();
-    $productos = \App\Models\Producto::with('categoria')->latest()->get();
+    $query = \App\Models\Producto::with('categoria')->latest();
+
+    if ($request->has('categoria')) {
+        $query->where('categoria_id', $request->categoria);
+    }
+
+    $productos = $query->get();
     return view('tienda.catalogo', compact('categorias', 'productos'));
 }
 
 public function show($id)
 {
-    $producto = \App\Models\Producto::with('categoria')->findOrFail($id);
+    $producto = \App\Models\Producto::with(['categoria', 'tallas'])->findOrFail($id);
     return view('tienda.show', compact('producto'));
 }
 }

@@ -11,11 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('categorias', function (Blueprint $table) {
+        Schema::create('pedidos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
+            $table->string('celular');
+            $table->string('correo');
+            $table->string('direccion');
+            $table->string('cuidad');
+            $table->enum('estado', ['pendiente', 'confirmado', 'entregado'])->default('pendiente');
+            $table->decimal('total', 10, 2);
             $table->timestamps();
-            $table->string('imagen')->nullable();
         });
     }
 
@@ -24,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('categorias');
+        Schema::dropIfExists('pedidos');
     }
 };

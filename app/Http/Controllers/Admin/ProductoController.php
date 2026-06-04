@@ -65,39 +65,38 @@ class ProductoController extends Controller
      */
     public function edit(string $id)
     {
-        $producto = \App\Models\Producto::findOrFail($id);
-        $categorias = \App\Models\Categoria::orderBy('nombre')->get();
-        return view('admin.productos.edit', compact('producto', 'categorias'));
+    $producto = \App\Models\Producto::with('tallas')->findOrFail($id);
+    $categorias = \App\Models\Categoria::orderBy('nombre')->get();
+    return view('admin.productos.edit', compact('producto', 'categorias'));
     }
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric',
-            'imagen' => 'nullable|image|max:2048',
-            'tipo' => 'required|string|max:255',
-            'genero' => 'required|string|max:255',
-            'categoria_id' => 'nullable|exists:categorias,id',
-            'stock' => 'required|integer|min:0',    
-        ]);
+{
+    $request->validate([
+        'nombre'       => 'required|string|max:255',
+        'descripcion'  => 'nullable|string',
+        'precio'       => 'required|numeric',
+        'imagen'       => 'nullable|image|max:2048',
+        'tipo'         => 'required|string|max:255',
+        'genero'       => 'required|string|max:255',
+        'categoria_id' => 'nullable|exists:categorias,id',
+    ]);
 
-        $producto = \App\Models\Producto::findOrFail($id);
+    $producto = \App\Models\Producto::findOrFail($id);
 
-        $data = $request->only('nombre', 'descripcion', 'precio', 'tipo', 'genero', 'categoria_id', 'stock');
+    $data = $request->only('nombre', 'descripcion', 'precio', 'tipo', 'genero', 'categoria_id');
 
-        if ($request->hasFile('imagen')) {
-            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
-        }
-
-        $producto->update($data);
-
-        return redirect()->route('admin.productos.index')->with('success', 'Producto actualizado exitosamente.');
+    if ($request->hasFile('imagen')) {
+        $data['imagen'] = $request->file('imagen')->store('productos', 'public');
     }
+
+    $producto->update($data);
+
+    return redirect()->route('admin.productos.index')->with('success', 'Producto actualizado exitosamente.');
+}
 
     /**
      * Remove the specified resource from storage.
