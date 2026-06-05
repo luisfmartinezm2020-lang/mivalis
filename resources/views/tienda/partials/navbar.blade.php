@@ -16,8 +16,12 @@
         <a href="{{ route('carrito.index') }}" style="font-size:11px; letter-spacing:0.08em; color:#111; text-decoration:none; text-transform:uppercase; position:relative;">
             <i class="fas fa-shopping-bag"></i>
             @if($cantidadCarrito > 0)
-                <span style="position:absolute; top:-8px; right:-8px; background:#111; color:#fff; font-size:9px; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                <span id="carrito-contador" style="position:absolute; top:-8px; right:-8px; background:#111; color:#fff; font-size:9px; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
                     {{ $cantidadCarrito }}
+                </span>
+            @else
+                <span id="carrito-contador" style="display:none; position:absolute; top:-8px; right:-8px; background:#111; color:#fff; font-size:9px; width:16px; height:16px; border-radius:50%; align-items:center; justify-content:center;">
+                    0
                 </span>
             @endif
         </a>
@@ -35,6 +39,5 @@
         @endauth
 
     </div>
-    <span id="carrito-contador" style="...">{{ $cantidadCarrito }}</span>
 
 </nav>

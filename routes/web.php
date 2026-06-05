@@ -22,9 +22,11 @@ Route::post('/checkout/{producto}', [\App\Http\Controllers\CheckoutController::c
 
 // ====== DASHBOARD ======
 Route::get('/dashboard', function () {
-    return view('dashboard');
+    if (auth()->user()->role === 'admin') {
+        return redirect()->route('admin.categorias.index');
+    }
+    return redirect()->route('inicio');
 })->middleware(['auth', 'verified'])->name('dashboard');
-
 // ====== PERFIL ======
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
