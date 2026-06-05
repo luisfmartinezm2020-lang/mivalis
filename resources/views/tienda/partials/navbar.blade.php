@@ -35,5 +35,6 @@
         @endauth
 
     </div>
+    <span id="carrito-contador" style="...">{{ $cantidadCarrito }}</span>
 
 </nav>

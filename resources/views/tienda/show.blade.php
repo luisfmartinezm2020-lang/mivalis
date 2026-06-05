@@ -80,11 +80,12 @@
                         @csrf
                         <input type="hidden" name="producto_id" value="{{ $producto->id }}">
                         <input type="hidden" name="talla" id="talla-input" value="">
-                 <button type="submit" 
-                     onclick="return agregarCarrito(this)"
-                        style="background:#fff; color:#111; padding:14px 32px; border:1px solid #111; cursor:pointer; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; width:100%;">
-                        AGREGAR AL CARRITO
-                     </button>
+                 <button type="button"
+                        onclick="agregarAlCarrito({{ $producto->id }}, document.querySelector('.talla-btn.selected')?.textContent.trim() || '')"
+                         style="background:#fff; color:#111; padding:14px 32px; border:1px solid #111; cursor:pointer; 
+                        font-size:12px; letter-spacing:0.1em; text-transform:uppercase; width:100%;">
+                          AGREGAR AL CARRITO
+                    </button>
                      </form>
 
                 {{-- COMPRAR --}}

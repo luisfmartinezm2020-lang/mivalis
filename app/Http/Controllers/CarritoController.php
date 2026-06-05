@@ -29,7 +29,18 @@ class CarritoController extends Controller
         }
 
         session()->put('carrito', $carrito);
-        return redirect()->route('carrito.index');
+         // Si es AJAX devuelve JSON, si no redirige normal
+    if ($request->ajax()) {
+        $total = array_sum(array_map(fn($item) => $item['precio'] * $item['cantidad'], $carrito));
+        return response()->json([
+            'estado'   => 'success',
+            'carrito'  => array_values($carrito),
+            'total'    => number_format($total, 0, ',', '.'),
+            'cantidad' => count($carrito),
+        ]);
+    }
+
+    return redirect()->route('carrito.index');
     }
 
     public function index()
