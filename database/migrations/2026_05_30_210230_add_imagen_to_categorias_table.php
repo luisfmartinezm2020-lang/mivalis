@@ -1,13 +1,18 @@
-public function up(): void
-{
-    // Schema::table('categorias', function (Blueprint $table) {
-    //     $table->string('imagen')->nullable();
-    // });
-}
+<?php
 
-public function down(): void
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
 {
-    // Schema::table('categorias', function (Blueprint $table) {
-    //     $table->dropColumn('imagen');
-    // });
-}
+    public function up(): void
+    {
+        // imagen ya existe en create_categorias_table, no hacer nada
+    }
+
+    public function down(): void
+    {
+        //
+    }
+};
