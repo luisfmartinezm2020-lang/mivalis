@@ -22,7 +22,11 @@
                 <div style="height:320px; background:#e8e6e2; position:relative; overflow:hidden;">
                     @if($producto->imagen)
                         <img src="{{ Storage::url($producto->imagen) }}" 
-                             style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;">
+                             style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;
+                             transition:transform 0.4s ease;"
+                             onmouseover="this.style.transform='scale(1.08)'"
+                             onmouseout="this.style.transform='scale(1)'"
+                             onclick="abrirLightbox(this.src)">
                     @endif
                 </div>
 

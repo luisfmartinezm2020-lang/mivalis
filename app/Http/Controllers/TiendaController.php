@@ -7,10 +7,14 @@ use Illuminate\Http\Request;
 
 class TiendaController extends Controller
 {
-    public function index()
+   public function index()
 {
     $categorias = \App\Models\Categoria::all();
-    $productos = \App\Models\Producto::with('categoria')->latest()->take(8)->get();
+    $productos = \App\Models\Producto::with('categoria')
+                    ->where('destacado', true)
+                    ->latest()
+                    ->take(8)
+                    ->get();
     return view('tienda.index', compact('categorias', 'productos'));
 }
 

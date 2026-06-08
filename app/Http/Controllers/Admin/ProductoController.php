@@ -29,29 +29,28 @@ class ProductoController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        $request->validate([
-            'nombre' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'precio' => 'required|numeric',
-            'imagen' => 'nullable|image|max:2048',
-            'tipo' => 'required|string|max:255',
-            'genero' => 'required|string|max:255',
-            'categoria_id' => 'nullable|exists:categorias,id',
-            'stock' => 'required|integer|min:0',
-        ]);
+{
+    $request->validate([
+        'nombre'       => 'required|string|max:255',
+        'descripcion'  => 'nullable|string',
+        'precio'       => 'required|numeric',
+        'imagen'       => 'nullable|image|max:10240',
+        'tipo'         => 'required|string|max:255',
+        'genero'       => 'required|string|max:255',
+        'categoria_id' => 'nullable|exists:categorias,id',
+    ]);
 
-        $data = $request->only('nombre', 'descripcion', 'precio', 'tipo', 'genero', 'categoria_id', 'stock');
+    $data = $request->only('nombre', 'descripcion', 'precio', 'tipo', 'genero', 'categoria_id', 'destacado');
+    $data['destacado'] = $request->has('destacado') ? 1 : 0;
 
-        if ($request->hasFile('imagen')) {
-            $data['imagen'] = $request->file('imagen')->store('productos', 'public');
-        }
-
-        \App\Models\Producto::create($data);
-
-        return redirect()->route('admin.productos.index')->with('success', 'Producto creado exitosamente.');
+    if ($request->hasFile('imagen')) {
+        $data['imagen'] = $request->file('imagen')->store('productos', 'public');
     }
 
+    $producto = \App\Models\Producto::create($data);
+
+    return redirect()->route('admin.productos.edit', $producto)->with('success', 'Producto creado. Ahora puedes agregar tallas');
+}
     /**
      * Display the specified resource.
      */
@@ -79,7 +78,7 @@ class ProductoController extends Controller
         'nombre'       => 'required|string|max:255',
         'descripcion'  => 'nullable|string',
         'precio'       => 'required|numeric',
-        'imagen'       => 'nullable|image|max:2048',
+        'imagen'       => 'nullable|image|max:10240',
         'tipo'         => 'required|string|max:255',
         'genero'       => 'required|string|max:255',
         'categoria_id' => 'nullable|exists:categorias,id',
@@ -87,7 +86,8 @@ class ProductoController extends Controller
 
     $producto = \App\Models\Producto::findOrFail($id);
 
-    $data = $request->only('nombre', 'descripcion', 'precio', 'tipo', 'genero', 'categoria_id');
+    $data = $request->only('nombre', 'descripcion', 'precio', 'tipo', 'genero', 'categoria_id', 'destacado');
+    $data['destacado'] = $request->has('destacado') ? 1 : 0;
 
     if ($request->hasFile('imagen')) {
         $data['imagen'] = $request->file('imagen')->store('productos', 'public');

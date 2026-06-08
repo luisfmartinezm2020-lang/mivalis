@@ -55,6 +55,9 @@
             <button type="submit" style="background:#cba6f7; color:#1e1e2e; padding:8px 16px; border-radius:6px; font-size:13px; font-weight:500;">
                 Crear producto
             </button>
+            <a href="{{ route('admin.productos.index') }}" style="display:inline-block; padding:8px 16px; font-size:13px; color:#a6adc8; text-decoration:none;">
+                 ← Volver
+            </a>
         </form>
     </div>
 </x-layouts.admin>

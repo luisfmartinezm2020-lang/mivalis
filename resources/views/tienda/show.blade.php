@@ -1,3 +1,26 @@
+{{-- LIGHTBOX --}}
+<div id="lightbox" onclick="cerrarLightbox()"
+     style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.9); z-index:9999; cursor:zoom-out;
+            align-items:center; justify-content:center;">
+    <img id="lightbox-img" src="" style="max-width:90%; max-height:90%; object-fit:contain;">
+</div>
+
+<script>
+function abrirLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+function cerrarLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') cerrarLightbox();
+});
+</script>
+
 <x-layouts.tienda>
     <div style="max-width:900px; margin:0 auto; padding:24px;">
 
@@ -11,7 +34,11 @@
             <div style="flex:1 1 350px; background:#e8e6e2; position:relative; overflow:hidden; min-height:450px;">
                 @if($producto->imagen)
                     <img src="{{ Storage::url($producto->imagen) }}"
-                         style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;">
+                         style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;
+                         transition:transform 0.4s ease;"
+                         onmouseover="this.style.transform='scale(1.08)'"
+                         onmouseout="this.style.transform='scale(1)'"
+                         onclick="abrirLightbox(this.src)">
                 @endif
             </div>
 

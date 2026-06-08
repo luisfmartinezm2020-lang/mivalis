@@ -24,8 +24,12 @@
             <div style="margin-bottom:16px;">
                 <label style="display:block; font-size:13px; color:#6c7086; margin-bottom:4px;">Imagen</label>
                 <input type="file" name="imagen" accept="image/*" style="width:100%; padding:8px 12px; border-radius:4px; border:0.5px solid #313244; background:#313244; color:#cdd6f4;">
-                @if($producto->imagen)
-                    <p style="font-size:11px; color:#6c7086; margin-top:4px;">Imagen actual: {{ $producto->imagen }}</p>
+               @if($producto->imagen)
+            <div style="margin-top:8px;">
+                <img src="{{ Storage::url($producto->imagen) }}" 
+             style="height:80px; width:80px; object-fit:cover; border-radius:4px; border:0.5px solid #313244;">
+                <p style="font-size:11px; color:#6c7086; margin-top:4px;">Imagen actual</p>
+            </div>
                 @endif
             </div>
 
@@ -57,6 +61,14 @@
                     @endforeach
                 </select>
             </div>
+            <div style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+           <input type="checkbox" name="destacado" id="destacado" value="1"
+           {{ $producto->destacado ? 'checked' : '' }}
+           style="width:16px; height:16px; cursor:pointer;">
+             <label for="destacado" style="font-size:13px; color:#6c7086; cursor:pointer;">
+                      Mostrar en destacados del inicio
+            </label>
+                </div>
 
             <button type="submit" style="background:#cba6f7; color:#1e1e2e; padding:8px 16px; border-radius:6px; font-size:13px; font-weight:500; border:none; cursor:pointer;">
                 Actualizar producto
