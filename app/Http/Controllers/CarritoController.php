@@ -14,33 +14,76 @@ class CarritoController extends Controller
         $talla   = $request->talla;
         $clave   = $id . '_' . $talla;
 
+        $producto = Producto::findOrFail($id);
+
         if (isset($carrito[$clave])) {
-            $carrito[$clave]['cantidad']++;
+            $carrito[$clave]['cantidad'] += $request->cantidad ?? 1;
         } else {
-            $producto        = Producto::findOrFail($id);
             $carrito[$clave] = [
                 'id'       => $producto->id,
                 'nombre'   => $producto->nombre,
                 'precio'   => $producto->precio,
                 'imagen'   => $producto->imagen,
                 'talla'    => $talla,
-                'cantidad' => 1,
+                'cantidad' => $request->cantidad ?? 1,
             ];
         }
 
         session()->put('carrito', $carrito);
-         // Si es AJAX devuelve JSON, si no redirige normal
-    if ($request->ajax()) {
+
         $total = array_sum(array_map(fn($item) => $item['precio'] * $item['cantidad'], $carrito));
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success'  => true,
+                'carrito'  => array_values($carrito),
+                'total'    => $total,
+                'cantidad' => count($carrito),
+            ]);
+        }
+
+        return redirect()->route('carrito.index');
+    }
+
+    public function eliminarAjax($clave)
+    {
+        $carrito = session()->get('carrito', []);
+        unset($carrito[$clave]);
+        session()->put('carrito', $carrito);
+
+        $total = array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], $carrito));
+
         return response()->json([
-            'estado'   => 'success',
+            'success'  => true,
             'carrito'  => array_values($carrito),
-            'total'    => number_format($total, 0, ',', '.'),
+            'total'    => $total,
             'cantidad' => count($carrito),
         ]);
     }
 
-    return redirect()->route('carrito.index');
+    public function actualizarAjax(Request $request)
+    {
+        $carrito = session()->get('carrito', []);
+        $clave   = $request->clave;
+        $delta   = $request->delta;
+
+        if (isset($carrito[$clave])) {
+            $carrito[$clave]['cantidad'] += $delta;
+            if ($carrito[$clave]['cantidad'] <= 0) {
+                unset($carrito[$clave]);
+            }
+        }
+
+        session()->put('carrito', $carrito);
+
+        $total = array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], $carrito));
+
+        return response()->json([
+            'success'  => true,
+            'carrito'  => array_values($carrito),
+            'total'    => $total,
+            'cantidad' => count($carrito),
+        ]);
     }
 
     public function index()
@@ -50,17 +93,15 @@ class CarritoController extends Controller
         return view('tienda.carrito', compact('carrito', 'total'));
     }
 
-    public function checkout()
-    {
-        $carrito = session()->get('carrito', []);
-
-        if (empty($carrito)) {
-            return redirect()->route('carrito.index');
-        }
-
-        return view('tienda.carrito_checkout', compact('carrito'));
+   public function checkout()
+{
+    $carrito = session()->get('carrito', []);
+    if (empty($carrito)) {
+        return redirect()->route('carrito.index');
     }
-
+    $total = array_sum(array_map(fn($item) => $item['precio'] * $item['cantidad'], $carrito));
+    return view('tienda.carrito_checkout', compact('carrito', 'total'));
+}
     public function confirmar(Request $request)
     {
         $request->validate([
@@ -72,7 +113,6 @@ class CarritoController extends Controller
         ]);
 
         $carrito = session()->get('carrito', []);
-
         if (empty($carrito)) {
             return redirect()->route('carrito.index');
         }

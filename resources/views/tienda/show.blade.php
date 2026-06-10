@@ -98,39 +98,39 @@ document.addEventListener('keydown', (e) => {
                 <p style="font-size:14px; color:#666; line-height:1.6; margin:0;">
                     {{ $producto->descripcion }}
                 </p>
-                {{-- BOTONES --}}
-            @if($stockTotal > 0 || $producto->stock > 0)
-                    <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-        
-                          {{-- AGREGAR AL CARRITO --}}
-                 <form action="{{ route('carrito.agregar') }}" method="POST">
-                        @csrf
-                        <input type="hidden" name="producto_id" value="{{ $producto->id }}">
-                        <input type="hidden" name="talla" id="talla-input" value="">
-                 <button type="button"
-                        onclick="agregarAlCarrito({{ $producto->id }}, document.querySelector('.talla-btn.selected')?.textContent.trim() || '')"
-                         style="background:#fff; color:#111; padding:14px 32px; border:1px solid #111; cursor:pointer; 
-                        font-size:12px; letter-spacing:0.1em; text-transform:uppercase; width:100%;">
-                          AGREGAR AL CARRITO
-                    </button>
-                     </form>
+            {{-- BOTONES --}}
+@if($stockTotal > 0 || $producto->stock > 0)
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
 
-                {{-- COMPRAR --}}
-                <button 
-                 id="btn-comprar"
-                 onclick="comprarWhatsApp()"
-                style="background:#111; color:#fff; padding:14px 32px; border:none; cursor:pointer; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; width:100%;">
-                {{ $producto->tipo == 'venta' ? 'COMPRAR' : 'ALQUILAR' }}
-                    </button>
+        {{-- AGREGAR AL CARRITO --}}
+        <button type="button"
+            onclick="
+                const talla = document.querySelector('.talla-btn.selected')?.textContent.trim() || '';
+                agregarAlCarrito({{ $producto->id }}, talla, 1);
+            "
+            style="background:#fff; color:#111; padding:14px 32px; border:1px solid #111; cursor:pointer;
+                   font-size:12px; letter-spacing:0.1em; text-transform:uppercase; width:100%;">
+            AGREGAR AL CARRITO
+        </button>
 
-                 </div>
-            @endif
+        {{-- COMPRAR --}}
+        <button id="btn-comprar" onclick="comprarWhatsApp()"
+            style="background:#111; color:#fff; padding:14px 32px; border:none; cursor:pointer;
+                   font-size:12px; letter-spacing:0.1em; text-transform:uppercase; width:100%;">
+            {{ $producto->tipo == 'venta' ? 'COMPRAR' : 'ALQUILAR' }}
+        </button>
 
-               
+    </div>
+@endif  
             </div>
         </div>
     </div>
 <script>
+    function cambiarCantidad(valor) {
+    const input = document.getElementById('cantidad-input');
+    const nueva = Math.max(1, parseInt(input.value) + valor);
+    input.value = nueva;
+}
     function agregarCarrito(btn) {
         const tallaSeleccionada = document.querySelector('.talla-btn.selected');
         if (!tallaSeleccionada && {{ $producto->tallas->count() }} > 0) {
@@ -142,10 +142,14 @@ document.addEventListener('keydown', (e) => {
     }
 
     function comprarWhatsApp() {
+        @auth
         const tallaSeleccionada = document.querySelector('.talla-btn.selected');
         const talla = tallaSeleccionada ? tallaSeleccionada.textContent.trim() : '';
         const url = "{{ route('checkout.create', $producto) }}" + "?talla=" + talla;
         window.location.href = url;
+        @else
+            window.location.href = "{{ route('login')}}"
+        @endauth
     }
 
     document.querySelectorAll('.talla-btn').forEach(btn => {

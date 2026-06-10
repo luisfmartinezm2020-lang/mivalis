@@ -13,6 +13,8 @@ Route::post('/carrito/agregar', [App\Http\Controllers\CarritoController::class, 
 Route::get('/carrito', [App\Http\Controllers\CarritoController::class, 'index'])->name('carrito.index');
 Route::get('/carrito/checkout', [App\Http\Controllers\CarritoController::class, 'checkout'])->name('carrito.checkout');
 Route::post('/carrito/confirmar', [App\Http\Controllers\CarritoController::class, 'confirmar'])->name('carrito.confirmar');
+Route::delete('/carrito/eliminar-ajax/{clave}', [App\Http\Controllers\CarritoController::class, 'eliminarAjax'])->name('carrito.eliminarAjax');
+Route::post('/carrito/actualizar-ajax', [App\Http\Controllers\CarritoController::class, 'actualizarAjax'])->name('carrito.actualizarAjax');
 Route::delete('/carrito/{id}', [App\Http\Controllers\CarritoController::class, 'eliminar'])->name('carrito.eliminar');
 Route::delete('/carrito', [App\Http\Controllers\CarritoController::class, 'vaciar'])->name('carrito.vaciar');
 

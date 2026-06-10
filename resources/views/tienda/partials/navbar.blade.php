@@ -1,4 +1,4 @@
-<nav style="background:#fff; border-bottom:0.5px solid #e5e5e5; display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:48px;">
+<nav style="background:#fff; border-bottom:0.5px solid #e5e5e5; display:flex; align-items:center; justify-content:space-between; padding:0 24px; height:48px; position:relative; z-index:100;">
     
     <a href="{{ route('inicio') }}" style="font-size:14px; font-weight:500; letter-spacing:0.1em; color:#111; text-decoration:none;">
         MIVALIS
@@ -11,20 +11,20 @@
 
     <div style="display:flex; gap:16px; align-items:center;">
 
-        {{-- CARRITO --}}
+        {{-- ÍCONO CARRITO --}}
         @php $cantidadCarrito = count(session()->get('carrito', [])); @endphp
-        <a href="{{ route('carrito.index') }}" style="font-size:11px; letter-spacing:0.08em; color:#111; text-decoration:none; text-transform:uppercase; position:relative;">
-            <i class="fas fa-shopping-bag"></i>
-            @if($cantidadCarrito > 0)
-                <span id="carrito-contador" style="position:absolute; top:-8px; right:-8px; background:#111; color:#fff; font-size:9px; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+        <div style="position:relative;">
+            <button onclick="abrirCarrito()" style="background:none; border:none; cursor:pointer; font-size:16px; color:#111; position:relative;">
+                <i class="fas fa-shopping-bag"></i>
+                <span id="carrito-contador" 
+                      style="position:absolute; top:-8px; right:-8px; background:#111; color:#fff; font-size:9px; 
+                             width:16px; height:16px; border-radius:50%; 
+                             display:{{ $cantidadCarrito > 0 ? 'flex' : 'none' }}; 
+                             align-items:center; justify-content:center;">
                     {{ $cantidadCarrito }}
                 </span>
-            @else
-                <span id="carrito-contador" style="display:none; position:absolute; top:-8px; right:-8px; background:#111; color:#fff; font-size:9px; width:16px; height:16px; border-radius:50%; align-items:center; justify-content:center;">
-                    0
-                </span>
-            @endif
-        </a>
+            </button>
+        </div>
 
         @auth
             @if(auth()->user()->role === 'admin')
@@ -39,5 +39,4 @@
         @endauth
 
     </div>
-
 </nav>
