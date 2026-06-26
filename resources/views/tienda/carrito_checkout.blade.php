@@ -1,9 +1,8 @@
 <x-layouts.tienda>
 <script>
-// Inicializar el panel flotante con los datos actuales al cargar la página
 window.addEventListener('DOMContentLoaded', () => {
-    const carrito = @json(array_values(session()->get('carrito', [])));
-    const total   = {{ array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], session()->get('carrito', []))) }};
+    const carrito  = @json(array_values(session()->get('carrito', [])));
+    const total    = {{ array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], session()->get('carrito', []))) }};
     const cantidad = {{ count(session()->get('carrito', [])) }};
     renderizarCarrito(carrito, total, cantidad);
 });
@@ -41,6 +40,12 @@ window.addEventListener('DOMContentLoaded', () => {
                             @if($item['talla'])
                                 <p style="font-size:12px; color:#666; margin:0 0 4px;">Talla: {{ $item['talla'] }}</p>
                             @endif
+                            {{-- Tipo de item --}}
+                            @if(($item['tipo'] ?? 'venta') === 'alquiler')
+                                <p style="font-size:11px; color:#fab387; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.04em;">Alquiler</p>
+                            @else
+                                <p style="font-size:11px; color:#a6adc8; margin:0 0 4px; text-transform:uppercase; letter-spacing:0.04em;">Venta</p>
+                            @endif
                             {{-- Cantidad con botones --}}
                             <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
                                 <button onclick="cambiarYActualizarResumen('{{ $clave }}', -1)"
@@ -64,6 +69,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
             {{-- FORMULARIO --}}
             <div style="flex:1 1 300px;">
+                @php $hayAlquiler = collect($carrito)->contains(fn($i) => ($i['tipo'] ?? 'venta') === 'alquiler'); @endphp
+
                 <form action="{{ route('carrito.confirmar') }}" method="POST">
                     @csrf
 
@@ -87,12 +94,31 @@ window.addEventListener('DOMContentLoaded', () => {
                         <input type="text" name="direccion" required style="width:100%; padding:12px; border:1px solid #e5e5e5; background:#fff; color:#111; font-size:14px; box-sizing:border-box;">
                     </div>
 
-                    <div style="margin-bottom:24px;">
+                    <div style="margin-bottom:16px;">
                         <label style="display:block; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#666; margin-bottom:6px;">Ciudad</label>
                         <input type="text" name="ciudad" required style="width:100%; padding:12px; border:1px solid #e5e5e5; background:#fff; color:#111; font-size:14px; box-sizing:border-box;">
                     </div>
 
-                    <button type="submit" style="width:100%; background:#111; color:#fff; padding:14px 32px; border:none; cursor:pointer; font-size:12px; letter-spacing:0.1em; text-transform:uppercase;">
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#666; margin-bottom:6px;">Fecha de entrega</label>
+                        <input type="date" name="fecha_entrega" required
+                            min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                            style="width:100%; padding:12px; border:1px solid #e5e5e5; background:#fff; color:#111; font-size:14px; box-sizing:border-box;">
+                    </div>
+
+                    @if($hayAlquiler)
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block; font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:#666; margin-bottom:6px;">
+                            Fecha de devolución <span style="color:#fab387;">(alquiler)</span>
+                        </label>
+                        <input type="date" name="fecha_devolucion"
+                            min="{{ date('Y-m-d', strtotime('+2 days')) }}"
+                            style="width:100%; padding:12px; border:1px solid #e5e5e5; background:#fff; color:#111; font-size:14px; box-sizing:border-box;">
+                        <p style="font-size:11px; color:#888; margin:4px 0 0;">Fecha en que devuelves las prendas en alquiler</p>
+                    </div>
+                    @endif
+
+                    <button type="submit" style="width:100%; background:#111; color:#fff; padding:14px 32px; border:none; cursor:pointer; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; margin-top:8px;">
                         CONFIRMAR PEDIDO
                     </button>
                 </form>
@@ -102,7 +128,6 @@ window.addEventListener('DOMContentLoaded', () => {
     </div>
 
 <script>
-// Eliminar desde el resumen y sincronizar con el panel
 function eliminarYActualizarResumen(clave) {
     fetch(`/carrito/eliminar-ajax/${clave}`, {
         method: 'DELETE',
@@ -114,27 +139,18 @@ function eliminarYActualizarResumen(clave) {
     .then(r => r.json())
     .then(json => {
         if (json.success) {
-            // Quitar del resumen
             const el = document.getElementById(`resumen-${clave}`);
             if (el) el.remove();
-
-            // Si carrito vacío redirigir al catálogo
             if (json.cantidad === 0) {
                 window.location.href = '{{ route("catalogo") }}';
                 return;
             }
-
-            // Actualizar total del resumen
-            document.getElementById('resumen-total').innerText =
-                '$ ' + Number(json.total).toLocaleString('es-CO');
-
-            // Sincronizar panel flotante
+            document.getElementById('resumen-total').innerText = '$ ' + Number(json.total).toLocaleString('es-CO');
             renderizarCarrito(json.carrito, json.total, json.cantidad);
         }
     });
 }
 
-// Cambiar cantidad desde el resumen y sincronizar
 function cambiarYActualizarResumen(clave, delta) {
     fetch('/carrito/actualizar-ajax', {
         method: 'POST',
@@ -152,25 +168,16 @@ function cambiarYActualizarResumen(clave, delta) {
                 window.location.href = '{{ route("catalogo") }}';
                 return;
             }
-
-            // Buscar el item actualizado
             const items = Array.isArray(json.carrito) ? json.carrito : Object.values(json.carrito);
             const item  = items.find(i => (i.id + '_' + i.talla) === clave);
-
             if (item) {
                 document.getElementById(`cant-${clave}`).innerText = item.cantidad;
-                document.getElementById(`sub-${clave}`).innerText =
-                    '$ ' + (item.precio * item.cantidad).toLocaleString('es-CO');
+                document.getElementById(`sub-${clave}`).innerText = '$ ' + (item.precio * item.cantidad).toLocaleString('es-CO');
             } else {
-                // Si cantidad llegó a 0, quitar fila
                 const el = document.getElementById(`resumen-${clave}`);
                 if (el) el.remove();
             }
-
-            document.getElementById('resumen-total').innerText =
-                '$ ' + Number(json.total).toLocaleString('es-CO');
-
-            // Sincronizar panel flotante
+            document.getElementById('resumen-total').innerText = '$ ' + Number(json.total).toLocaleString('es-CO');
             renderizarCarrito(json.carrito, json.total, json.cantidad);
         }
     });

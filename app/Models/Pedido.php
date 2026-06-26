@@ -13,7 +13,10 @@ class Pedido extends Model
         'direccion',
         'ciudad',
         'estado',
-        'total'
+        'total',
+        'tipo',              // ← nuevo
+        'fecha_entrega',     // ← nuevo
+        'fecha_devolucion',  // ← nuevo
     ];
 
     public function productos()

@@ -27,6 +27,7 @@ class CarritoController extends Controller
                 'imagen'   => $producto->imagen,
                 'talla'    => $talla,
                 'cantidad' => $request->cantidad ?? 1,
+                'tipo'     => $producto->tipo, // ← agrega esta línea
             ];
         }
 
@@ -102,15 +103,16 @@ class CarritoController extends Controller
     }
     $total = array_sum(array_map(fn($item) => $item['precio'] * $item['cantidad'], $carrito));
     return view('tienda.carrito_checkout', compact('carrito', 'total'));
-}
-    public function confirmar(Request $request)
+}public function confirmar(Request $request)
 {
     $request->validate([
-        'nombre'    => 'required|string|max:255',
-        'celular'   => 'required|string|max:20',
-        'correo'    => 'required|email|max:255',
-        'direccion' => 'required|string|max:500',
-        'ciudad'    => 'required|string|max:100',
+        'nombre'          => 'required|string|max:255',
+        'celular'         => 'required|string|max:20',
+        'correo'          => 'required|email|max:255',
+        'direccion'       => 'required|string|max:500',
+        'ciudad'          => 'required|string|max:100',
+        'fecha_entrega'   => 'required|date',
+        'fecha_devolucion'=> 'nullable|date|after:fecha_entrega',
     ]);
 
     $carrito = session()->get('carrito', []);
@@ -118,35 +120,28 @@ class CarritoController extends Controller
         return redirect()->route('carrito.index');
     }
 
-    $mensaje = "Hola! Quiero hacer un pedido:\n\n";
-    $total   = 0;
+    // Determinar tipo del pedido
+    $tieneAlquiler = collect($carrito)->contains(fn($i) => $i['tipo'] === 'alquiler');
+    $tieneVenta    = collect($carrito)->contains(fn($i) => $i['tipo'] === 'venta');
+    $tipoPedido    = $tieneAlquiler && $tieneVenta ? 'mixto' : ($tieneAlquiler ? 'alquiler' : 'venta');
 
-    foreach ($carrito as $item) {
-        $subtotal  = $item['precio'] * $item['cantidad'];
-        $total    += $subtotal;
-        $mensaje  .= "- {$item['nombre']}";
-        if ($item['talla']) $mensaje .= " talla {$item['talla']}";
-        $mensaje  .= " x{$item['cantidad']} — $" . number_format($subtotal, 0, ',', '.') . "\n";
-    }
+    $total = array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], $carrito));
 
-    $mensaje .= "\nTOTAL: $" . number_format($total, 0, ',', '.');
-    $mensaje .= "\n\nDatos de entrega:";
-    $mensaje .= "\nNombre: {$request->nombre}";
-    $mensaje .= "\nCelular: {$request->celular}";
-    $mensaje .= "\nDirección: {$request->direccion}, {$request->ciudad}";
-
-    // ── Guardar pedido en base de datos ─────────────────────
+    // Guardar pedido
     $pedido = \App\Models\Pedido::create([
-        'nombre'    => $request->nombre,
-        'celular'   => $request->celular,
-        'correo'    => $request->correo,
-        'direccion' => $request->direccion,
-        'ciudad'    => $request->ciudad,
-        'estado'    => 'pendiente',
-        'total'     => $total,
+        'nombre'          => $request->nombre,
+        'celular'         => $request->celular,
+        'correo'          => $request->correo,
+        'direccion'       => $request->direccion,
+        'ciudad'          => $request->ciudad,
+        'estado'          => 'pendiente',
+        'total'           => $total,
+        'tipo'            => $tipoPedido,
+        'fecha_entrega'   => $request->fecha_entrega,
+        'fecha_devolucion'=> $request->fecha_devolucion,
     ]);
 
-    // ── Guardar productos del pedido y bajar stock ───────────
+    // Guardar productos y bajar stock
     foreach ($carrito as $item) {
         $pedido->productos()->attach($item['id'], [
             'talla'           => $item['talla'],
@@ -154,16 +149,13 @@ class CarritoController extends Controller
             'precio_unitario' => $item['precio'],
         ]);
 
-        // Bajar stock de la talla correspondiente
         $talla = \App\Models\Talla::where('producto_id', $item['id'])
                                    ->where('talla', $item['talla'])
                                    ->first();
-
         if ($talla) {
             $nuevoStock = max(0, $talla->stock - $item['cantidad']);
             $talla->update(['stock' => $nuevoStock]);
 
-            // Notificación si stock <= 3
             if ($nuevoStock <= 3) {
                 \Illuminate\Support\Facades\Log::warning("STOCK BAJO: {$item['nombre']} talla {$item['talla']} — quedan {$nuevoStock} unidades.");
             }
@@ -172,10 +164,8 @@ class CarritoController extends Controller
 
     session()->forget('carrito');
 
-    $telefono = \App\Models\Configuracion::get('whatsapp', '573044229882');
-    $url      = "https://wa.me/{$telefono}?text=" . urlencode($mensaje);
-
-    return redirect($url);
+    // Redirigir a página de confirmación
+    return redirect()->route('pedido.confirmado', $pedido->id);
 }
     public function eliminar($id)
     {

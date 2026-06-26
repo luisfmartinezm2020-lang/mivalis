@@ -18,6 +18,12 @@ Route::post('/carrito/actualizar-ajax', [App\Http\Controllers\CarritoController:
 Route::delete('/carrito/{id}', [App\Http\Controllers\CarritoController::class, 'eliminar'])->name('carrito.eliminar');
 Route::delete('/carrito', [App\Http\Controllers\CarritoController::class, 'vaciar'])->name('carrito.vaciar');
 
+// ====== PEDIDO CONFIRMADO ======
+Route::get('/pedido-confirmado/{id}', function ($id) {
+    $pedido = \App\Models\Pedido::findOrFail($id);
+    return view('tienda.pedido_confirmado', compact('pedido'));
+})->name('pedido.confirmado');
+
 // ====== CHECKOUT PRODUCTO INDIVIDUAL (público) ======
 Route::get('/checkout/{producto}', [\App\Http\Controllers\CheckoutController::class, 'create'])->name('checkout.create');
 Route::post('/checkout/{producto}', [\App\Http\Controllers\CheckoutController::class, 'store'])->name('checkout.store');
@@ -44,11 +50,9 @@ Route::middleware(['auth', 'es.admin'])->prefix('admin')->name('admin.')->group(
     Route::post('productos/{producto}/tallas', [\App\Http\Controllers\Admin\TallaController::class, 'store'])->name('tallas.store');
     Route::delete('tallas/{talla}', [\App\Http\Controllers\Admin\TallaController::class, 'destroy'])->name('tallas.destroy');
     Route::get('pedidos', [\App\Http\Controllers\Admin\PedidoController::class, 'index'])->name('pedidos.index');
-    Route::post('pedidos/{id}/confirmar', [\App\Http\Controllers\Admin\PedidoController::class, 'confirmar'])->name('pedidos.confirmar');
-    Route::post('pedidos/{id}/cancelar', [\App\Http\Controllers\Admin\PedidoController::class, 'cancelar'])->name('pedidos.cancelar');
+    Route::post('pedidos/{id}/estado/{estado}', [\App\Http\Controllers\Admin\PedidoController::class, 'cambiarEstado'])->name('pedidos.estado');
     Route::get('ajustes', [\App\Http\Controllers\Admin\AjustesController::class, 'index'])->name('ajustes.index');
     Route::post('ajustes', [\App\Http\Controllers\Admin\AjustesController::class, 'actualizar'])->name('ajustes.actualizar');
     Route::post('ajustes/password', [\App\Http\Controllers\Admin\AjustesController::class, 'cambiarPassword'])->name('ajustes.password');
 });
-
 require __DIR__.'/auth.php';
