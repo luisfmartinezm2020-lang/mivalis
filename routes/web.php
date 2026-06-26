@@ -25,7 +25,7 @@ Route::post('/checkout/{producto}', [\App\Http\Controllers\CheckoutController::c
 // ====== DASHBOARD ======
 Route::get('/dashboard', function () {
     if (auth()->user()->role === 'admin') {
-        return redirect()->route('admin.categorias.index');
+        return redirect()->route('admin.home');
     }
     return redirect()->route('inicio');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -39,6 +39,7 @@ Route::middleware('auth')->group(function () {
 
 // ====== ADMIN ======
 Route::middleware(['auth', 'es.admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', fn() => view('admin.home'))->name('home');
     Route::resource('categorias', \App\Http\Controllers\Admin\CategoriaController::class);
     Route::resource('productos', \App\Http\Controllers\Admin\ProductoController::class);
     Route::post('productos/{producto}/tallas', [\App\Http\Controllers\Admin\TallaController::class, 'store'])->name('tallas.store');
