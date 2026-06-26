@@ -5,28 +5,47 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Producto;
 use App\Models\Pedido;
+use App\Models\Talla;
 
 class CarritoController extends Controller
 {
     public function agregar(Request $request)
     {
-        $carrito = session()->get('carrito', []);
-        $id      = $request->producto_id;
-        $talla   = $request->talla;
-        $clave   = $id . '_' . $talla;
+        $carrito  = session()->get('carrito', []);
+        $id       = $request->producto_id;
+        $tallaStr = $request->talla;
+        $clave    = $id . '_' . $tallaStr;
+        $cantidad = $request->cantidad ?? 1;
 
         $producto = Producto::findOrFail($id);
 
+        // Validar stock si el producto tiene tallas
+        if ($tallaStr) {
+            $talla = Talla::where('producto_id', $id)->where('talla', $tallaStr)->first();
+            if ($talla) {
+                $enCarrito = isset($carrito[$clave]) ? $carrito[$clave]['cantidad'] : 0;
+                if (($enCarrito + $cantidad) > $talla->stock) {
+                    $msg = $talla->stock > 0
+                        ? "Solo quedan {$talla->stock} unidades disponibles en talla {$tallaStr}."
+                        : "La talla {$tallaStr} no tiene stock disponible.";
+                    if ($request->ajax()) {
+                        return response()->json(['success' => false, 'message' => $msg], 422);
+                    }
+                    return back()->with('error', $msg);
+                }
+            }
+        }
+
         if (isset($carrito[$clave])) {
-            $carrito[$clave]['cantidad'] += $request->cantidad ?? 1;
+            $carrito[$clave]['cantidad'] += $cantidad;
         } else {
             $carrito[$clave] = [
                 'id'       => $producto->id,
                 'nombre'   => $producto->nombre,
                 'precio'   => $producto->precio,
                 'imagen'   => $producto->imagen,
-                'talla'    => $talla,
-                'cantidad' => $request->cantidad ?? 1,
+                'talla'    => $tallaStr,
+                'cantidad' => $cantidad,
             ];
         }
 
@@ -69,9 +88,24 @@ class CarritoController extends Controller
         $delta   = $request->delta;
 
         if (isset($carrito[$clave])) {
-            $carrito[$clave]['cantidad'] += $delta;
-            if ($carrito[$clave]['cantidad'] <= 0) {
+            $item         = $carrito[$clave];
+            $nuevaCantidad = $item['cantidad'] + $delta;
+
+            // Validar stock al aumentar
+            if ($delta > 0 && $item['talla']) {
+                $talla = Talla::where('producto_id', $item['id'])->where('talla', $item['talla'])->first();
+                if ($talla && $nuevaCantidad > $talla->stock) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Stock máximo disponible: {$talla->stock}",
+                    ], 422);
+                }
+            }
+
+            if ($nuevaCantidad <= 0) {
                 unset($carrito[$clave]);
+            } else {
+                $carrito[$clave]['cantidad'] = $nuevaCantidad;
             }
         }
 
@@ -137,6 +171,13 @@ class CarritoController extends Controller
                 'cantidad'        => $item['cantidad'],
                 'precio_unitario' => $item['precio'],
             ]);
+
+            // Descontar stock de la talla
+            if ($item['talla']) {
+                Talla::where('producto_id', $item['id'])
+                    ->where('talla', $item['talla'])
+                    ->decrement('stock', $item['cantidad']);
+            }
         }
 
         $mensaje = "Hola! Quiero hacer un pedido:\n\n";
