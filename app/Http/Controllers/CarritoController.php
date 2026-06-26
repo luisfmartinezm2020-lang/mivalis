@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Producto;
-use App\Models\Talla;
+use App\Models\Pedido;
 
 class CarritoController extends Controller
 {
@@ -94,89 +94,74 @@ class CarritoController extends Controller
         return view('tienda.carrito', compact('carrito', 'total'));
     }
 
-   public function checkout()
-{
-    $carrito = session()->get('carrito', []);
-    if (empty($carrito)) {
-        return redirect()->route('carrito.index');
+    public function checkout()
+    {
+        $carrito = session()->get('carrito', []);
+        if (empty($carrito)) {
+            return redirect()->route('carrito.index');
+        }
+        $total = array_sum(array_map(fn($item) => $item['precio'] * $item['cantidad'], $carrito));
+        return view('tienda.carrito_checkout', compact('carrito', 'total'));
     }
-    $total = array_sum(array_map(fn($item) => $item['precio'] * $item['cantidad'], $carrito));
-    return view('tienda.carrito_checkout', compact('carrito', 'total'));
-}
+
     public function confirmar(Request $request)
-{
-    $request->validate([
-        'nombre'    => 'required|string|max:255',
-        'celular'   => 'required|string|max:20',
-        'correo'    => 'required|email|max:255',
-        'direccion' => 'required|string|max:500',
-        'ciudad'    => 'required|string|max:100',
-    ]);
-
-    $carrito = session()->get('carrito', []);
-    if (empty($carrito)) {
-        return redirect()->route('carrito.index');
-    }
-
-    $mensaje = "Hola! Quiero hacer un pedido:\n\n";
-    $total   = 0;
-
-    foreach ($carrito as $item) {
-        $subtotal  = $item['precio'] * $item['cantidad'];
-        $total    += $subtotal;
-        $mensaje  .= "- {$item['nombre']}";
-        if ($item['talla']) $mensaje .= " talla {$item['talla']}";
-        $mensaje  .= " x{$item['cantidad']} — $" . number_format($subtotal, 0, ',', '.') . "\n";
-    }
-
-    $mensaje .= "\nTOTAL: $" . number_format($total, 0, ',', '.');
-    $mensaje .= "\n\nDatos de entrega:";
-    $mensaje .= "\nNombre: {$request->nombre}";
-    $mensaje .= "\nCelular: {$request->celular}";
-    $mensaje .= "\nDirección: {$request->direccion}, {$request->ciudad}";
-
-    // ── Guardar pedido en base de datos ─────────────────────
-    $pedido = \App\Models\Pedido::create([
-        'nombre'    => $request->nombre,
-        'celular'   => $request->celular,
-        'correo'    => $request->correo,
-        'direccion' => $request->direccion,
-        'ciudad'    => $request->ciudad,
-        'estado'    => 'pendiente',
-        'total'     => $total,
-    ]);
-
-    // ── Guardar productos del pedido y bajar stock ───────────
-    foreach ($carrito as $item) {
-        $pedido->productos()->attach($item['id'], [
-            'talla'           => $item['talla'],
-            'cantidad'        => $item['cantidad'],
-            'precio_unitario' => $item['precio'],
+    {
+        $request->validate([
+            'nombre'    => 'required|string|max:255',
+            'celular'   => 'required|string|max:20',
+            'correo'    => 'required|email|max:255',
+            'direccion' => 'required|string|max:500',
+            'ciudad'    => 'required|string|max:100',
         ]);
 
-        // Bajar stock de la talla correspondiente
-        $talla = \App\Models\Talla::where('producto_id', $item['id'])
-                                   ->where('talla', $item['talla'])
-                                   ->first();
-
-        if ($talla) {
-            $nuevoStock = max(0, $talla->stock - $item['cantidad']);
-            $talla->update(['stock' => $nuevoStock]);
-
-            // Notificación si stock <= 3
-            if ($nuevoStock <= 3) {
-                \Illuminate\Support\Facades\Log::warning("STOCK BAJO: {$item['nombre']} talla {$item['talla']} — quedan {$nuevoStock} unidades.");
-            }
+        $carrito = session()->get('carrito', []);
+        if (empty($carrito)) {
+            return redirect()->route('carrito.index');
         }
+
+        $total = array_sum(array_map(fn($item) => $item['precio'] * $item['cantidad'], $carrito));
+
+        $pedido = Pedido::create([
+            'nombre'    => $request->nombre,
+            'celular'   => $request->celular,
+            'correo'    => $request->correo,
+            'direccion' => $request->direccion,
+            'ciudad'    => $request->ciudad,
+            'estado'    => 'pendiente',
+            'total'     => $total,
+        ]);
+
+        foreach ($carrito as $item) {
+            $pedido->productos()->attach($item['id'], [
+                'talla'           => $item['talla'],
+                'cantidad'        => $item['cantidad'],
+                'precio_unitario' => $item['precio'],
+            ]);
+        }
+
+        $mensaje = "Hola! Quiero hacer un pedido:\n\n";
+
+        foreach ($carrito as $item) {
+            $subtotal  = $item['precio'] * $item['cantidad'];
+            $mensaje  .= "- {$item['nombre']}";
+            if ($item['talla']) $mensaje .= " talla {$item['talla']}";
+            $mensaje  .= " x{$item['cantidad']} — $" . number_format($subtotal, 0, ',', '.') . "\n";
+        }
+
+        $mensaje .= "\nTOTAL: $" . number_format($total, 0, ',', '.');
+        $mensaje .= "\n\nDatos de entrega:";
+        $mensaje .= "\nNombre: {$request->nombre}";
+        $mensaje .= "\nCelular: {$request->celular}";
+        $mensaje .= "\nDirección: {$request->direccion}, {$request->ciudad}";
+
+        session()->forget('carrito');
+
+        $telefono = "573044229882";
+        $url      = "https://wa.me/{$telefono}?text=" . urlencode($mensaje);
+
+        return redirect($url);
     }
 
-    session()->forget('carrito');
-
-    $telefono = \App\Models\Configuracion::get('whatsapp', '573044229882');
-    $url      = "https://wa.me/{$telefono}?text=" . urlencode($mensaje);
-
-    return redirect($url);
-}
     public function eliminar($id)
     {
         $carrito = session()->get('carrito', []);
