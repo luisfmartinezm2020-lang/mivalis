@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Producto;
 use App\Models\Pedido;
 use App\Models\Talla;
+use App\Services\TelegramService;
 
 class CarritoController extends Controller
 {
@@ -19,7 +20,6 @@ class CarritoController extends Controller
 
         $producto = Producto::findOrFail($id);
 
-        // Validar stock si el producto tiene tallas
         if ($tallaStr) {
             $talla = Talla::where('producto_id', $id)->where('talla', $tallaStr)->first();
             if ($talla) {
@@ -88,10 +88,9 @@ class CarritoController extends Controller
         $delta   = $request->delta;
 
         if (isset($carrito[$clave])) {
-            $item         = $carrito[$clave];
+            $item          = $carrito[$clave];
             $nuevaCantidad = $item['cantidad'] + $delta;
 
-            // Validar stock al aumentar
             if ($delta > 0 && $item['talla']) {
                 $talla = Talla::where('producto_id', $item['id'])->where('talla', $item['talla'])->first();
                 if ($talla && $nuevaCantidad > $talla->stock) {
@@ -165,6 +164,7 @@ class CarritoController extends Controller
             'total'     => $total,
         ]);
 
+        $lineas = '';
         foreach ($carrito as $item) {
             $pedido->productos()->attach($item['id'], [
                 'talla'           => $item['talla'],
@@ -172,23 +172,45 @@ class CarritoController extends Controller
                 'precio_unitario' => $item['precio'],
             ]);
 
-            // Descontar stock de la talla
             if ($item['talla']) {
-                Talla::where('producto_id', $item['id'])
-                    ->where('talla', $item['talla'])
-                    ->decrement('stock', $item['cantidad']);
+                $talla = Talla::where('producto_id', $item['id'])
+                    ->where('talla', $item['talla'])->first();
+                if ($talla) {
+                    $talla->decrement('stock', $item['cantidad']);
+                    if ($talla->fresh()->stock <= 2) {
+                        TelegramService::notificarStockCritico(
+                            "⚠️ <b>Stock crítico</b>\n" .
+                            "Producto: {$item['nombre']}\n" .
+                            "Talla: {$item['talla']}\n" .
+                            "Stock restante: {$talla->fresh()->stock} unidades"
+                        );
+                    }
+                }
             }
+
+            $subtotal = $item['precio'] * $item['cantidad'];
+            $lineas  .= "• {$item['nombre']}";
+            if ($item['talla']) $lineas .= " talla {$item['talla']}";
+            $lineas  .= " x{$item['cantidad']} — $" . number_format($subtotal, 0, ',', '.') . "\n";
         }
 
-        $mensaje = "Hola! Quiero hacer un pedido:\n\n";
+        TelegramService::notificarPedido($pedido->id,
+            "🛍️ <b>Nuevo pedido #{$pedido->id}</b>\n\n" .
+            $lineas .
+            "\n<b>Total: $" . number_format($total, 0, ',', '.') . "</b>\n\n" .
+            "👤 {$request->nombre}\n" .
+            "📱 {$request->celular}\n" .
+            "📧 {$request->correo}\n" .
+            "📍 {$request->direccion}, {$request->ciudad}"
+        );
 
+        $mensaje  = "Hola! Quiero hacer un pedido:\n\n";
         foreach ($carrito as $item) {
             $subtotal  = $item['precio'] * $item['cantidad'];
             $mensaje  .= "- {$item['nombre']}";
             if ($item['talla']) $mensaje .= " talla {$item['talla']}";
             $mensaje  .= " x{$item['cantidad']} — $" . number_format($subtotal, 0, ',', '.') . "\n";
         }
-
         $mensaje .= "\nTOTAL: $" . number_format($total, 0, ',', '.');
         $mensaje .= "\n\nDatos de entrega:";
         $mensaje .= "\nNombre: {$request->nombre}";
@@ -199,7 +221,6 @@ class CarritoController extends Controller
 
         $telefono = "573044229882";
         $url      = "https://wa.me/{$telefono}?text=" . urlencode($mensaje);
-
         return redirect($url);
     }
 

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Producto;
 use App\Models\Pedido;
 use App\Models\Talla;
+use App\Services\TelegramService;
 
 class CheckoutController extends Controller
 {
@@ -31,7 +32,6 @@ class CheckoutController extends Controller
 
         $producto = Producto::findOrFail($producto);
 
-        // Validar stock si tiene talla
         if ($request->talla) {
             $talla = Talla::where('producto_id', $producto->id)
                 ->where('talla', $request->talla)
@@ -59,12 +59,38 @@ class CheckoutController extends Controller
             'precio_unitario' => $producto->precio,
         ]);
 
-        // Descontar stock de la talla
         if ($request->talla) {
-            Talla::where('producto_id', $producto->id)
+            $talla = Talla::where('producto_id', $producto->id)
                 ->where('talla', $request->talla)
-                ->decrement('stock', $request->cantidad);
+                ->first();
+
+            if ($talla) {
+                $talla->decrement('stock', $request->cantidad);
+                if ($talla->fresh()->stock <= 2) {
+                    TelegramService::notificarPedido(['mensaje' =>
+                        "⚠️ <b>Stock crítico</b>\n" .
+                        "Producto: {$producto->nombre}\n" .
+                        "Talla: {$request->talla}\n" .
+                        "Stock restante: {$talla->fresh()->stock} unidades"
+                    ]);
+                }
+            }
         }
+
+        // Notificar pedido nuevo
+        $linea = "• {$producto->nombre}";
+        if ($request->talla) $linea .= " talla {$request->talla}";
+        $linea .= " x{$request->cantidad} — $" . number_format($total, 0, ',', '.');
+
+        TelegramService::notificarPedido(['mensaje' =>
+            "🛍️ <b>Nuevo pedido #{$pedido->id}</b>\n\n" .
+            $linea . "\n" .
+            "\n<b>Total: $" . number_format($total, 0, ',', '.') . "</b>\n\n" .
+            "👤 {$request->nombre}\n" .
+            "📱 {$request->celular}\n" .
+            "📧 {$request->correo}\n" .
+            "📍 {$request->direccion}, {$request->ciudad}"
+        ]);
 
         $mensaje  = "Hola! Quiero {$producto->tipo}:\n";
         $mensaje .= "- {$producto->nombre}";
