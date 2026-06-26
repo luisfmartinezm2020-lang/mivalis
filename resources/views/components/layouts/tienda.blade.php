@@ -27,16 +27,13 @@
                 z-index:999; display:flex; flex-direction:column; transition:right 0.3s ease;
                 box-shadow:-4px 0 20px rgba(0,0,0,0.1);">
 
-        {{-- HEADER --}}
         <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #e5e5e5;">
             <h2 style="font-size:13px; font-weight:500; letter-spacing:0.1em; text-transform:uppercase; margin:0;">BOLSA DE COMPRAS</h2>
             <button onclick="cerrarCarrito()" style="background:none; border:none; cursor:pointer; font-size:20px; color:#111;">✕</button>
         </div>
 
-        {{-- ITEMS --}}
         <div id="carrito-items" style="flex:1; overflow-y:auto; padding:16px 24px;"></div>
 
-        {{-- FOOTER --}}
         <div id="carrito-footer" style="display:none; padding:20px 24px; border-top:1px solid #e5e5e5;">
             <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
                 <span style="font-size:13px; font-weight:500; text-transform:uppercase; letter-spacing:0.06em;">TOTAL</span>
@@ -56,7 +53,6 @@
     </div>
 
     <script>
-    // ── Abrir / cerrar ──────────────────────────────────────────
     function abrirCarrito() {
         document.getElementById('carrito-panel').style.right = '0';
         document.getElementById('carrito-overlay').style.display = 'block';
@@ -69,7 +65,6 @@
         document.body.style.overflow = '';
     }
 
-    // ── Agregar ─────────────────────────────────────────────────
     function agregarAlCarrito(productoId, talla, cantidad) {
         if (!talla) {
             alert('Por favor selecciona una talla');
@@ -97,7 +92,6 @@
         .catch(err => console.error(err));
     }
 
-    // ── Eliminar ────────────────────────────────────────────────
     function eliminarDelCarrito(clave) {
         fetch(`/carrito/eliminar-ajax/${clave}`, {
             method: 'DELETE',
@@ -114,7 +108,6 @@
         });
     }
 
-    // ── Cambiar cantidad ────────────────────────────────────────
     function cambiarCantidad(clave, delta) {
         fetch('/carrito/actualizar-ajax', {
             method: 'POST',
@@ -133,7 +126,6 @@
         });
     }
 
-    // ── Renderizar ──────────────────────────────────────────────
     function renderizarCarrito(carrito, total, cantidad) {
         const contenedor = document.getElementById('carrito-items');
         const footer     = document.getElementById('carrito-footer');
@@ -186,22 +178,22 @@
         document.getElementById('carrito-total').innerText = '$ ' + Number(total).toLocaleString('es-CO');
         footer.style.display = 'block';
     }
-    // Inicializar carrito al cargar cualquier página
-window.addEventListener('DOMContentLoaded', () => {
-    @php
-        $carritoSession = session()->get('carrito', []);
-        $totalSession = array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], $carritoSession));
-        $cantidadSession = count($carritoSession);
-    @endphp
 
-    const carritoInicial = @json(array_values($carritoSession));
-    const totalInicial   = {{ $totalSession }};
-    const cantidadInicial = {{ $cantidadSession }};
+    window.addEventListener('DOMContentLoaded', () => {
+        @php
+            $carritoSession  = session()->get('carrito', []);
+            $totalSession    = array_sum(array_map(fn($i) => $i['precio'] * $i['cantidad'], $carritoSession));
+            $cantidadSession = count($carritoSession);
+        @endphp
 
-    if (carritoInicial.length > 0) {
-        renderizarCarrito(carritoInicial, totalInicial, cantidadInicial);
-    }
-});
+        const carritoInicial  = @json(array_values($carritoSession));
+        const totalInicial    = {{ $totalSession }};
+        const cantidadInicial = {{ $cantidadSession }};
+
+        if (carritoInicial.length > 0) {
+            renderizarCarrito(carritoInicial, totalInicial, cantidadInicial);
+        }
+    });
     </script>
 
 </body>

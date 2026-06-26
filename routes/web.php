@@ -25,10 +25,11 @@ Route::post('/checkout/{producto}', [\App\Http\Controllers\CheckoutController::c
 // ====== DASHBOARD ======
 Route::get('/dashboard', function () {
     if (auth()->user()->role === 'admin') {
-        return redirect()->route('admin.categorias.index');
+        return view('admin.dashboard');
     }
     return redirect()->route('inicio');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
 // ====== PERFIL ======
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -43,7 +44,11 @@ Route::middleware(['auth', 'es.admin'])->prefix('admin')->name('admin.')->group(
     Route::post('productos/{producto}/tallas', [\App\Http\Controllers\Admin\TallaController::class, 'store'])->name('tallas.store');
     Route::delete('tallas/{talla}', [\App\Http\Controllers\Admin\TallaController::class, 'destroy'])->name('tallas.destroy');
     Route::get('pedidos', [\App\Http\Controllers\Admin\PedidoController::class, 'index'])->name('pedidos.index');
-    Route::post('pedidos/{pedido}/confirmar', [\App\Http\Controllers\Admin\PedidoController::class, 'confirmar'])->name('pedidos.confirmar');
+    Route::post('pedidos/{id}/confirmar', [\App\Http\Controllers\Admin\PedidoController::class, 'confirmar'])->name('pedidos.confirmar');
+    Route::post('pedidos/{id}/cancelar', [\App\Http\Controllers\Admin\PedidoController::class, 'cancelar'])->name('pedidos.cancelar');
+    Route::get('ajustes', [\App\Http\Controllers\Admin\AjustesController::class, 'index'])->name('ajustes.index');
+    Route::post('ajustes', [\App\Http\Controllers\Admin\AjustesController::class, 'actualizar'])->name('ajustes.actualizar');
+    Route::post('ajustes/password', [\App\Http\Controllers\Admin\AjustesController::class, 'cambiarPassword'])->name('ajustes.password');
 });
 
 require __DIR__.'/auth.php';

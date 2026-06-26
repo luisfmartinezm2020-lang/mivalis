@@ -19,10 +19,11 @@
             </div>
             <nav style="flex:1; padding:12px 0;">
                 <p style="font-size:10px; color:#6c7086; padding:8px 16px 4px; letter-spacing:0.06em; text-transform:uppercase;">Principal</p>
-                <a href="{{ route('dashboard') }}" style="display:block; font-size:13px; color:#a6adc8; padding:8px 16px;" onmouseover="this.style.background='#313244'" onmouseout="this.style.background='transparent'">Panel</a>
+                <a href="{{ route('dashboard') }}" style="display:block; font-size:13px; color:#a6adc8; padding:8px 16px;" onmouseover="this.style.background='#313244'" onmouseout="this.style.background='transparent'">Inicio</a>
                 <p style="font-size:10px; color:#6c7086; padding:12px 16px 4px; letter-spacing:0.06em; text-transform:uppercase;">Tienda</p>
                 <a href="{{ route('admin.categorias.index') }}" style="display:block; font-size:13px; color:#a6adc8; padding:8px 16px;" onmouseover="this.style.background='#313244'" onmouseout="this.style.background='transparent'">Categorías</a>
                 <a href="{{ route('admin.productos.index') }}" style="display:block; font-size:13px; color:#a6adc8; padding:8px 16px;" onmouseover="this.style.background='#313244'" onmouseout="this.style.background='transparent'">Productos</a>
+                <a href="{{ route('admin.ajustes.index') }}" style="display:block; font-size:13px; color:#a6adc8; padding:8px 16px;" onmouseover="this.style.background='#313244'" onmouseout="this.style.background='transparent'">Ajustes</a>
             </nav>
             <div style="padding:16px; border-top:0.5px solid #313244;">
                 <p style="font-size:12px; color:#a6adc8;">{{ auth()->user()->name }}</p>
