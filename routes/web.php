@@ -22,6 +22,10 @@ Route::delete('/carrito', [App\Http\Controllers\CarritoController::class, 'vacia
 Route::get('/checkout/{producto}', [\App\Http\Controllers\CheckoutController::class, 'create'])->name('checkout.create');
 Route::post('/checkout/{producto}', [\App\Http\Controllers\CheckoutController::class, 'store'])->name('checkout.store');
 
+// ====== TELEGRAM WEBHOOK (público, llamado por Telegram) ======
+Route::post('/telegram/webhook', [\App\Http\Controllers\TelegramWebhookController::class, 'handle'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
+
 // ====== DASHBOARD ======
 Route::get('/dashboard', function () {
     if (auth()->user()->role === 'admin') {

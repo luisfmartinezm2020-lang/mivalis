@@ -174,19 +174,16 @@ class CarritoController extends Controller
 
             if ($item['talla']) {
                 $talla = Talla::where('producto_id', $item['id'])
-                    ->where('talla', $item['talla'])
-                    ->first();
-
+                    ->where('talla', $item['talla'])->first();
                 if ($talla) {
                     $talla->decrement('stock', $item['cantidad']);
-                    // Alerta si el stock queda en nivel crítico
                     if ($talla->fresh()->stock <= 2) {
-                        TelegramService::notificarPedido(['mensaje' =>
+                        TelegramService::notificarStockCritico(
                             "⚠️ <b>Stock crítico</b>\n" .
                             "Producto: {$item['nombre']}\n" .
                             "Talla: {$item['talla']}\n" .
                             "Stock restante: {$talla->fresh()->stock} unidades"
-                        ]);
+                        );
                     }
                 }
             }
@@ -197,8 +194,7 @@ class CarritoController extends Controller
             $lineas  .= " x{$item['cantidad']} — $" . number_format($subtotal, 0, ',', '.') . "\n";
         }
 
-        // Notificar pedido nuevo
-        TelegramService::notificarPedido(['mensaje' =>
+        TelegramService::notificarPedido($pedido->id,
             "🛍️ <b>Nuevo pedido #{$pedido->id}</b>\n\n" .
             $lineas .
             "\n<b>Total: $" . number_format($total, 0, ',', '.') . "</b>\n\n" .
@@ -206,7 +202,7 @@ class CarritoController extends Controller
             "📱 {$request->celular}\n" .
             "📧 {$request->correo}\n" .
             "📍 {$request->direccion}, {$request->ciudad}"
-        ]);
+        );
 
         $mensaje  = "Hola! Quiero hacer un pedido:\n\n";
         foreach ($carrito as $item) {
