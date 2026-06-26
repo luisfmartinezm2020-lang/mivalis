@@ -13,17 +13,15 @@ class PedidoController extends Controller
         return view('admin.pedidos.index', compact('pedidos'));
     }
 
-    public function confirmar($id)
+    public function confirmar(Pedido $pedido)
     {
-        $pedido = Pedido::findOrFail($id);
         $pedido->update(['estado' => 'confirmado']);
-        return back()->with('success', 'Pedido confirmado correctamente.');
+        return back()->with('success', 'Pedido #' . $pedido->id . ' confirmado.');
     }
 
-    public function cancelar($id)
+    public function entregar(Pedido $pedido)
     {
-        $pedido = Pedido::findOrFail($id);
-        $pedido->update(['estado' => 'cancelado']);
-        return back()->with('success', 'Pedido cancelado.');
+        $pedido->update(['estado' => 'entregado']);
+        return back()->with('success', 'Pedido #' . $pedido->id . ' marcado como entregado.');
     }
 }
